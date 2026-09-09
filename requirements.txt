@@ -1,0 +1,11 @@
+bs4
+jupytext
+matplotlib
+matplotlib-inline
+jupyterlab
+scipy
+pooch
+sounddevice
+soundfile
+PyWavelets
+scikit-learn
