@@ -1,13 +1,14 @@
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
 #       jupytext_version: 1.19.5
 #   kernelspec:
-#     display_name: .venv (3.14.4)
+#     display_name: .venv (3.12.13.final.0)
 #     language: python
 #     name: python3
 # ---
@@ -27,6 +28,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import matplotlib.pyplot as plt
 
 # %%
+# type: ignore
 data = load_breast_cancer()
 X = data.data
 y = data.target
@@ -50,6 +52,7 @@ mlp = MLPClassifier(hidden_layer_sizes=(10, 5), max_iter=1000, random_state=1)
 mlp.fit(X_train, y_train)
 
 # %%
+# type: ignore
 y_pred = mlp.predict(X_test)
 
 print("Confusion Matrix:")
@@ -86,8 +89,7 @@ def elu(x, alpha=1.0):
     return np.where(x > 0, x, alpha * (np.exp(x) - 1))
 
 def gelu(x):
-    # Gaussian Error Linear Unit approximation
-    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
+    return x * norm.cdf(x)
 
 # 2. Generate input range
 x = np.linspace(-4, 4, 1000)
@@ -96,8 +98,8 @@ x = np.linspace(-4, 4, 1000)
 plt.figure(figsize=(10, 6))
 
 plt.plot(x, relu(x), label="ReLU", linewidth=2.5)
-plt.plot(x, leaky_relu(x), label="LeakyReLU (α=0.1)", linewidth=2, linestyle="--")
-plt.plot(x, elu(x), label="ELU (α=1.0)", linewidth=2, linestyle="-.")
+plt.plot(x, leaky_relu(x), label="LeakyReLU (alpha=0.1)", linewidth=2, linestyle="--")
+plt.plot(x, elu(x), label="ELU (alpha=1.0)", linewidth=2, linestyle="-.")
 plt.plot(x, gelu(x), label="GELU", linewidth=2.5, linestyle=":")
 
 # 4. Styling and Layout
