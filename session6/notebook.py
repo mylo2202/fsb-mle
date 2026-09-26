@@ -1,6 +1,7 @@
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
@@ -17,6 +18,11 @@
 
 # %% [markdown]
 # ## Support Vector Machines with `SVC`
+#
+# The code below creates a simple 2D dataset with two classes.  
+# We fit a Support Vector Classifier using a pipeline that includes `StandardScaler`, which normalizes the feature values before training. This is important because SVMs are sensitive to feature scale.
+#
+# `SVC(gamma='auto')` creates a support vector machine with an RBF kernel, which can separate non-linear patterns in the data.
 
 # %%
 import numpy as np
@@ -32,7 +38,17 @@ clf.fit(X, y)
 print(clf.predict([[-0.8, -1]]))
 
 # %% [markdown]
+# The prediction above applies the learned decision boundary to a new sample and returns the class label assigned to that point.
+#
+# In this example, the model is trying to separate the two groups based on the input coordinates.
+
+# %% [markdown]
 # ## K-means with `KMeans`
+#
+# The next example uses the `KMeans` clustering algorithm to partition data into groups based on similarity.  
+# `n_clusters=2` tells the algorithm to find two centroids and assign each point to the nearest one.
+#
+# This is an unsupervised learning method, so there are no target labels during training.
 
 # %%
 from sklearn.cluster import KMeans
@@ -47,3 +63,7 @@ kmeans.predict([[0, 0], [12, 3]])
 
 # %%
 kmeans.cluster_centers_
+
+# %% [markdown]
+# The `labels_` array shows which cluster each training point belongs to.  
+# `predict()` assigns new observations to the nearest cluster center, and `cluster_centers_` reports the final centroid positions learned by the model.
