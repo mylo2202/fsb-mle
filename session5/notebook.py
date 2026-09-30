@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.5
 #   kernelspec:
-#     display_name: .venv (3.12.13.final.0)
+#     display_name: .venv (3.14.4)
 #     language: python
 #     name: python3
 # ---
@@ -195,3 +195,174 @@ plt.legend(fontsize=11, loc="upper left")
 plt.ylim(-1.5, 4)
 
 plt.show()
+
+# %% [markdown]
+# ### Bonus: MLPClassifier on Non-Linear Interlocking Moons
+
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_moons
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import log_loss, accuracy_score
+
+# 1. Generate non-linear interlocking moons with randomness/noise
+X, y = make_moons(
+    n_samples=800,
+    noise=0.25,        # Adds random Gaussian dispersion
+    random_state=42
+)
+
+# 2. Scale features (CRITICAL for neural network convergence)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 3. Initialize MLPClassifier
+# Architecture: 2 hidden layers with 32 and 16 neurons
+mlp = MLPClassifier(
+    hidden_layer_sizes=(32, 16),
+    activation='relu',
+    solver='adam',
+    learning_rate_init=0.01,
+    random_state=42
+)
+
+# 4. Train across epochs using partial_fit
+epochs = 120
+classes = np.unique(y)
+loss_curve = []
+accuracy_curve = []
+
+for epoch in range(epochs):
+    # Shuffle each epoch for stochastic minibatch updates
+    indices = np.random.permutation(len(X_scaled))
+    X_shuffled = X_scaled[indices]
+    y_shuffled = y[indices]
+    
+    # partial_fit updates weights incrementally
+    mlp.partial_fit(X_shuffled, y_shuffled, classes=classes)
+    
+    # Evaluate performance
+    probs = mlp.predict_proba(X_scaled)
+    preds = mlp.predict(X_scaled)
+    
+    loss_curve.append(log_loss(y, probs))
+    accuracy_curve.append(accuracy_score(y, preds))
+
+# 5. Visualizations
+# fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Plot 1: Non-Linear Decision Boundary
+x_min, x_max = X_scaled[:, 0].min() - 0.5, X_scaled[:, 0].max() + 0.5
+y_min, y_max = X_scaled[:, 1].min() - 0.5, X_scaled[:, 1].max() + 0.5
+xx, yy = np.meshgrid(np.linspace(x_min, x_max, 300), np.linspace(y_min, y_max, 300))
+
+Z = mlp.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+
+ax1.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.coolwarm)
+ax1.scatter(X_scaled[:, 0], X_scaled[:, 1], c=y, cmap=plt.cm.coolwarm, edgecolors='k', alpha=0.8)
+ax1.set_title("MLP Decision Boundary (32, 16 Architecture)")
+ax1.set_xlabel("Scaled Feature 1")
+ax1.set_ylabel("Scaled Feature 2")
+ax1.grid(True, linestyle=':', alpha=0.6)
+
+# Plot 2: Cross-Entropy Loss Curve
+ax2.plot(range(1, epochs + 1), loss_curve, color='crimson', linewidth=2)
+ax2.set_title("Cross-Entropy Loss Decay")
+ax2.set_xlabel("Epoch")
+ax2.set_ylabel("Log Loss")
+ax2.grid(True, linestyle=':', alpha=0.6)
+
+# # Plot 3: Accuracy Curve
+# ax3.plot(range(1, epochs + 1), accuracy_curve, color='forestgreen', linewidth=2)
+# ax3.set_title("Training Accuracy Curve")
+# ax3.set_xlabel("Epoch")
+# ax3.set_ylabel("Accuracy")
+# ax3.grid(True, linestyle=':', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# ### Bonus: Non-Linear Regression with MLPRegressor
+
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
+
+# 1. Generate synthetic non-linear data (Sinusoidal wave + noise)
+np.random.seed(42)
+n_samples = 600
+X = np.sort(np.random.uniform(-3, 3, size=(n_samples, 1)), axis=0)
+# Underlying true function: y = sin(2x) + 0.5x + noise
+y_true = np.sin(2 * X.ravel()) + 0.5 * X.ravel()
+y = y_true + np.random.normal(0, 0.35, size=n_samples)
+
+# 2. Scale features (CRITICAL for neural network convergence)
+scaler_X = StandardScaler()
+X_scaled = scaler_X.fit_transform(X)
+
+# 3. Initialize MLPRegressor
+# Architecture: 2 hidden layers with 64 and 32 neurons
+mlp_reg = MLPRegressor(
+    hidden_layer_sizes=(64, 32),
+    activation='relu',
+    solver='adam',
+    learning_rate_init=0.01,
+    alpha=0.001,          # L2 regularization weight decay
+    random_state=42
+)
+
+# 4. Train across epochs using partial_fit
+epochs = 150
+loss_curve = []
+
+for epoch in range(epochs):
+    # Shuffle each epoch
+    indices = np.random.permutation(len(X_scaled))
+    X_shuffled = X_scaled[indices]
+    y_shuffled = y[indices]
+    
+    # partial_fit incrementally updates network weights
+    mlp_reg.partial_fit(X_shuffled, y_shuffled)
+    
+    # Predict and record full Mean Squared Error (MSE)
+    y_pred = mlp_reg.predict(X_scaled)
+    current_loss = mean_squared_error(y, y_pred)
+    loss_curve.append(current_loss)
+
+# 5. Visualizations
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+# Plot 1: Fitted Non-Linear Curve vs Raw Noisy Data
+x_grid = np.linspace(-3.2, 3.2, 300).reshape(-1, 1)
+x_grid_scaled = scaler_X.transform(x_grid)
+y_grid_pred = mlp_reg.predict(x_grid_scaled)
+
+ax1.scatter(X, y, color='steelblue', alpha=0.5, edgecolors='k', label='Noisy Training Data')
+ax1.plot(x_grid, np.sin(2 * x_grid.ravel()) + 0.5 * x_grid.ravel(), 
+         color='black', linestyle='--', linewidth=2, label='True Signal (No Noise)')
+ax1.plot(x_grid, y_grid_pred, color='crimson', linewidth=2.5, label='MLP Fitted Curve')
+
+ax1.set_title("MLPRegressor: Fitting Non-Linear Target Function")
+ax1.set_xlabel("Feature X")
+ax1.set_ylabel("Target y")
+ax1.legend()
+ax1.grid(True, linestyle=':', alpha=0.6)
+
+# Plot 2: MSE Loss Decay Curve
+ax2.plot(range(1, epochs + 1), loss_curve, color='crimson', linewidth=2)
+ax2.set_title("Training Loss Curve (MSE vs Epochs)")
+ax2.set_xlabel("Epoch")
+ax2.set_ylabel("Mean Squared Error (MSE)")
+ax2.grid(True, linestyle=':', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+
+print(f"Final Training MSE Loss: {loss_curve[-1]:.4f}")
