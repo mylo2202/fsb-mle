@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.5
 #   kernelspec:
-#     display_name: .venv (3.14.4)
+#     display_name: venv (3.14.4)
 #     language: python
 #     name: python3
 # ---
@@ -286,6 +286,94 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
+# **MLP Classifier in TensorFlow (Interlocking Moons)**
+
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from sklearn.datasets import make_moons
+from sklearn.preprocessing import StandardScaler
+
+# Set random seeds for reproducibility
+tf.random.set_seed(42)
+np.random.seed(42)
+
+# 1. Generate synthetic non-linear data
+X, y = make_moons(n_samples=800, noise=0.25, random_state=42)
+
+# 2. Scale features (CRITICAL for neural networks)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 3. Build Keras Model (Equivalent to hidden_layer_sizes=(32, 16))
+model = Sequential([
+    Dense(32, activation='relu', input_shape=(2,)),  # Hidden Layer 1
+    Dense(16, activation='relu'),                    # Hidden Layer 2
+    Dense(1, activation='sigmoid')                   # Output Layer (Binary Classification)
+])
+
+# 4. Compile Model
+model.compile(
+    optimizer=Adam(learning_rate=0.01),
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+# 5. Train Model
+# Keras automatically tracks loss and metrics per epoch in history
+history = model.fit(
+    X_scaled, y,
+    epochs=120,
+    batch_size=32,
+    verbose=0  # Suppress console progress bar
+)
+
+# 6. Extract Training History
+loss_curve = history.history['loss']
+accuracy_curve = history.history['accuracy']
+
+# 7. Visualizations
+# fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Plot 1: Decision Boundary
+x_min, x_max = X_scaled[:, 0].min() - 0.5, X_scaled[:, 0].max() + 0.5
+y_min, y_max = X_scaled[:, 1].min() - 0.5, X_scaled[:, 1].max() + 0.5
+xx, yy = np.meshgrid(np.linspace(x_min, x_max, 300), np.linspace(y_min, y_max, 300))
+
+# Predict probabilities, then threshold at 0.5
+probs = model.predict(np.c_[xx.ravel(), yy.ravel()], verbose=0)
+Z = (probs > 0.5).astype(int).reshape(xx.shape)
+
+ax1.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.coolwarm)
+ax1.scatter(X_scaled[:, 0], X_scaled[:, 1], c=y, cmap=plt.cm.coolwarm, edgecolors='k', alpha=0.8)
+ax1.set_title("TensorFlow Decision Boundary (32, 16)")
+ax1.set_xlabel("Scaled Feature 1")
+ax1.set_ylabel("Scaled Feature 2")
+ax1.grid(True, linestyle=':', alpha=0.6)
+
+# Plot 2: Binary Cross-Entropy Loss Curve
+ax2.plot(range(1, 121), loss_curve, color='crimson', linewidth=2)
+ax2.set_title("Binary Cross-Entropy Loss")
+ax2.set_xlabel("Epoch")
+ax2.set_ylabel("Loss")
+ax2.grid(True, linestyle=':', alpha=0.6)
+
+# # Plot 3: Training Accuracy Curve
+# ax3.plot(range(1, 121), accuracy_curve, color='forestgreen', linewidth=2)
+# ax3.set_title("Training Accuracy Curve")
+# ax3.set_xlabel("Epoch")
+# ax3.set_ylabel("Accuracy")
+# ax3.grid(True, linestyle=':', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
 # ### Bonus: Non-Linear Regression with MLPRegressor
 
 # %%
@@ -356,6 +444,91 @@ ax1.legend()
 ax1.grid(True, linestyle=':', alpha=0.6)
 
 # Plot 2: MSE Loss Decay Curve
+ax2.plot(range(1, epochs + 1), loss_curve, color='crimson', linewidth=2)
+ax2.set_title("Training Loss Curve (MSE vs Epochs)")
+ax2.set_xlabel("Epoch")
+ax2.set_ylabel("Mean Squared Error (MSE)")
+ax2.grid(True, linestyle=':', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+
+print(f"Final Training MSE Loss: {loss_curve[-1]:.4f}")
+
+# %% [markdown]
+# **Non-Linear Regression in TensorFlow Keras**
+
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
+
+# Set random seeds for exact reproducibility
+tf.random.set_seed(42)
+np.random.seed(42)
+
+# 1. Generate synthetic non-linear data (Sinusoidal wave + noise)
+n_samples = 600
+X = np.sort(np.random.uniform(-3, 3, size=(n_samples, 1)), axis=0)
+y_true = np.sin(2 * X.ravel()) + 0.5 * X.ravel()
+y = y_true + np.random.normal(0, 0.35, size=n_samples)
+
+# 2. Scale features (CRITICAL for gradient descent convergence)
+scaler_X = StandardScaler()
+X_scaled = scaler_X.fit_transform(X)
+
+# 3. Build Keras Sequential Model (Equivalent to hidden_layer_sizes=(64, 32))
+model = Sequential([
+    Dense(64, activation='relu', input_shape=(1,)),  # Hidden Layer 1
+    Dense(32, activation='relu'),                    # Hidden Layer 2
+    Dense(1)                                         # Output Layer (1 continuous output, linear activation)
+])
+
+# 4. Compile Model for Regression
+model.compile(
+    optimizer=Adam(learning_rate=0.01),
+    loss='mean_squared_error',
+    metrics=['mean_squared_error']
+)
+
+# 5. Train Model
+# Keras automatically tracks training loss history over epochs
+epochs = 150
+history = model.fit(
+    X_scaled, y,
+    epochs=epochs,
+    batch_size=32,
+    verbose=0  # Suppress training progress printout
+)
+
+# 6. Extract Loss History
+loss_curve = history.history['loss']
+
+# 7. Visualizations
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+# Plot 1: Non-Linear Regression Fit vs Raw Noisy Data
+x_grid = np.linspace(-3.2, 3.2, 300).reshape(-1, 1)
+x_grid_scaled = scaler_X.transform(x_grid)
+y_grid_pred = model.predict(x_grid_scaled, verbose=0)
+
+ax1.scatter(X, y, color='steelblue', alpha=0.5, edgecolors='k', label='Noisy Training Data')
+ax1.plot(x_grid, np.sin(2 * x_grid.ravel()) + 0.5 * x_grid.ravel(), 
+         color='black', linestyle='--', linewidth=2, label='True Signal (No Noise)')
+ax1.plot(x_grid, y_grid_pred, color='crimson', linewidth=2.5, label='TensorFlow Fitted Curve')
+
+ax1.set_title("TensorFlow Keras Regressor: Sinusoid Fit")
+ax1.set_xlabel("Feature X")
+ax1.set_ylabel("Target y")
+ax1.legend()
+ax1.grid(True, linestyle=':', alpha=0.6)
+
+# Plot 2: Mean Squared Error (MSE) Loss Decay Curve
 ax2.plot(range(1, epochs + 1), loss_curve, color='crimson', linewidth=2)
 ax2.set_title("Training Loss Curve (MSE vs Epochs)")
 ax2.set_xlabel("Epoch")
