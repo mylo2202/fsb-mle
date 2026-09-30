@@ -1,3 +1,5 @@
+ipykernel
+numpy
 bs4
 jupytext
 matplotlib
